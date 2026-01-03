@@ -191,3 +191,52 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     .sidebar { display: none; } 
     .chat-box, .input-area { padding-left: 15px; padding-right: 15px; }
 }
+
+/* MARKDOWN STYLES */
+
+/* Remove default margins from paragraphs so bubbles don't look huge */
+.bot-message p {
+    margin: 0 0 10px 0;
+}
+.bot-message p:last-child {
+    margin: 0;
+}
+
+/* Style Lists */
+.bot-message ul, .bot-message ol {
+    margin: 5px 0 10px 20px;
+    padding: 0;
+}
+
+/* Style Bold Text */
+.bot-message strong {
+    color: #fff;
+    font-weight: 700;
+}
+
+/* Style Links */
+.bot-message a {
+    color: #a8c7fa;
+    text-decoration: underline;
+}
+
+/* Style Code Blocks (like ```lua code ```) */
+.bot-message pre {
+    background: #00000050;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto; /* Scroll if code is too long */
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    border: 1px solid #ffffff10;
+}
+
+/* Style Inline */
+.bot-message code {
+    background: #00000050;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+    color: #ff9999; 
+}
