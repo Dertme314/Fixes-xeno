@@ -289,7 +289,7 @@ function appendLoader() {
     div.id = 'temp-loader';
     div.className = 'message bot-message';
     // UI CHANGE: Spinning icon instead of text
-    div.innerHTML = `<span class="material-symbols-outlined" style="animation:spin 1s infinite; font-size:24px;">sync</span>`;
+    div.innerHTML = `<span class="material-symbols-outlined" style="animation:spin 0.1s infinite; font-size:24px;">sync</span>`;
     
     // Add the keyframe animation if not in CSS
     if (!document.getElementById('loader-style')) {
