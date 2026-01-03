@@ -52,6 +52,9 @@
 
         <main class="chat-container">
             <header class="chat-header">
+                <button id="mobile-menu-btn" class="icon-btn mobile-only">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
                 <h1 id="chat-title">Xeno Helper</h1>
             </header>
 
@@ -70,7 +73,7 @@
 
             <div class="input-area">
                 <form id="chat-form">
-                    <input type="text" id="user-input" placeholder="Ask a question..." autocomplete="off">
+                    <textarea id="user-input" placeholder="Ask a question..." rows="1"></textarea>
                     <button type="submit" id="send-btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
