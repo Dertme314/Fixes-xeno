@@ -143,12 +143,14 @@ function renderChatUI() {
     chat.messages.slice(1).forEach(msg => {
         const div = document.createElement('div');
         div.classList.add('message', msg.role === 'user' ? 'user-message' : 'bot-message');
-        // Simple Markdown-ish parser (convert newlines)
-        div.innerHTML = msg.content.replace(/\n/g, '<br>');
+if (msg.role === 'user') {
+    div.innerHTML = msg.content.replace(/\n/g, '<br>');
+} else {
+    div.innerHTML = marked.parse(msg.content);
+}
         chatBox.appendChild(div);
     });
     
-    // Auto Scroll
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
