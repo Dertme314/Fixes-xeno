@@ -14,17 +14,21 @@ const closeSettings = document.getElementById('close-settings');
 const clearDataBtn = document.getElementById('clear-data-btn');
 const storageInfo = document.getElementById('storage-info');
 
-// Constants
+// --- CONSTANTS & PROMPTS ---
 const STORAGE_KEY = 'xeno_chats_v1';
-const SYSTEM_PROMPT = `You are a helpful assistant for Xeno Helpers. Be concise.`;
+
+// 1. Base Context (The knowledge base)
+const systemContext = `You are Xeno Helper. You help users with the Xeno executor. Do not mention you are an AI. Be concise.`;
+
+// 2. Master Prompt (The actual instruction sent to the AI)
 const masterPrompt = `
-    ${systemContext}
-    
-    IMPORTANT INSTRUCTION:
-    You are a support assistant strictly for Xeno Helpers (the support). 
-    Your goal is to train them on how to fix issues. 
-    Use the context above to answer their technical questions.
-  `;
+${systemContext}
+
+IMPORTANT INSTRUCTION:
+You are a support assistant strictly for Xeno Helpers (the support team). 
+Your goal is to train them on how to fix issues. 
+Use the context above to answer their technical questions.
+`;
 
 // State
 let allChats = [];
@@ -55,7 +59,8 @@ function startNewChat() {
     const newChat = {
         id: currentChatId,
         title: "New Chat",
-        messages: [{ role: "system", content: SYSTEM_PROMPT }],
+        // UPDATED: Uses masterPrompt instead of SYSTEM_PROMPT
+        messages: [{ role: "system", content: masterPrompt }],
         timestamp: Date.now()
     };
     allChats.unshift(newChat); // Add to top
@@ -151,11 +156,12 @@ function renderChatUI() {
     chat.messages.slice(1).forEach(msg => {
         const div = document.createElement('div');
         div.classList.add('message', msg.role === 'user' ? 'user-message' : 'bot-message');
-if (msg.role === 'user') {
-    div.innerHTML = msg.content.replace(/\n/g, '<br>');
-} else {
-    div.innerHTML = marked.parse(msg.content);
-}
+        if (msg.role === 'user') {
+            div.innerHTML = msg.content.replace(/\n/g, '<br>');
+        } else {
+            // Check if marked is available, fallback to text if not
+            div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(msg.content) : msg.content;
+        }
         chatBox.appendChild(div);
     });
     
