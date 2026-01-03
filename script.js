@@ -14,6 +14,11 @@ const closeSettings = document.getElementById('close-settings');
 const clearDataBtn = document.getElementById('clear-data-btn');
 const storageInfo = document.getElementById('storage-info');
 
+// Mobile Menu
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const sidebar = document.querySelector('.sidebar');
+let sidebarOverlay;
+
 // --- CONSTANTS & PROMPTS ---
 const STORAGE_KEY = 'xeno_chats_v1';
 
@@ -43,6 +48,13 @@ window.addEventListener('DOMContentLoaded', () => {
     } else {
         startNewChat();
     }
+
+    // Create overlay for mobile
+    sidebarOverlay = document.createElement('div');
+    sidebarOverlay.className = 'sidebar-overlay';
+    document.body.appendChild(sidebarOverlay);
+
+    sidebarOverlay.addEventListener('click', closeSidebar);
 });
 
 // --- CORE CHAT LOGIC ---
@@ -131,6 +143,22 @@ chatForm.addEventListener('submit', async (e) => {
         setInputState(true);
         userInput.focus();
         userInput.value = ''; // Ensure clear
+        userInput.style.height = 'auto'; // Reset height
+    }
+});
+
+// Auto-resize textarea
+userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = userInput.scrollHeight + 'px';
+});
+
+// Handle Enter key (submit if no shift)
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        // Trigger submit
+        chatForm.dispatchEvent(new Event('submit'));
     }
 });
 
@@ -161,6 +189,22 @@ function renderChatUI() {
         } else {
             // Check if marked is available, fallback to text if not
             div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(msg.content) : msg.content;
+
+            // Add copy buttons to code blocks
+            div.querySelectorAll('pre').forEach(pre => {
+                const copyBtn = document.createElement('button');
+                copyBtn.classList.add('copy-code-btn');
+                copyBtn.innerText = 'Copy';
+                copyBtn.onclick = () => {
+                    const code = pre.querySelector('code')?.innerText || pre.innerText;
+                    navigator.clipboard.writeText(code).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        setTimeout(() => copyBtn.innerText = 'Copy', 2000);
+                    });
+                };
+                pre.style.position = 'relative';
+                pre.appendChild(copyBtn);
+            });
         }
         chatBox.appendChild(div);
     });
@@ -171,13 +215,48 @@ function renderChatUI() {
 function renderHistory() {
     historyList.innerHTML = '';
     allChats.forEach(chat => {
-        const btn = document.createElement('div');
-        btn.classList.add('history-item');
-        if (chat.id === currentChatId) btn.classList.add('active');
-        btn.innerText = chat.title;
-        btn.onclick = () => loadChat(chat.id);
-        historyList.appendChild(btn);
+        const container = document.createElement('div');
+        container.classList.add('history-item');
+        if (chat.id === currentChatId) container.classList.add('active');
+
+        // Title
+        const titleSpan = document.createElement('span');
+        titleSpan.innerText = chat.title;
+        titleSpan.style.flex = "1";
+        titleSpan.style.overflow = "hidden";
+        titleSpan.style.textOverflow = "ellipsis";
+
+        // Delete Button
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = "&times;";
+        delBtn.classList.add('delete-chat-btn');
+        delBtn.onclick = (e) => deleteChat(e, chat.id);
+
+        container.appendChild(titleSpan);
+        container.appendChild(delBtn);
+        container.onclick = () => loadChat(chat.id);
+
+        historyList.appendChild(container);
     });
+}
+
+function deleteChat(e, id) {
+    e.stopPropagation();
+    if (!confirm("Delete this chat?")) return;
+
+    allChats = allChats.filter(c => c.id !== id);
+    saveToStorage();
+
+    // If we deleted the current chat, switch to another or new one
+    if (currentChatId === id) {
+        if (allChats.length > 0) {
+            loadChat(allChats[0].id);
+        } else {
+            startNewChat();
+        }
+    } else {
+        renderHistory();
+    }
 }
 
 function appendLoader() {
@@ -229,7 +308,23 @@ function setInputState(enabled) {
 
 // --- BUTTON EVENTS ---
 
-newChatBtn.addEventListener('click', startNewChat);
+// Mobile Menu
+if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+        sidebar.classList.add('show');
+        sidebarOverlay.classList.add('show');
+    });
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('show');
+    sidebarOverlay.classList.remove('show');
+}
+
+newChatBtn.addEventListener('click', () => {
+    startNewChat();
+    closeSidebar();
+});
 
 // Settings Logic
 settingsBtn.addEventListener('click', () => {

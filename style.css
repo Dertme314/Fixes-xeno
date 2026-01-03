@@ -66,13 +66,29 @@ body {
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     color: #aaa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 }
 .history-item:hover { background: #2a2a2a; color: white; }
 .history-item.active { background: #333; color: white; }
+
+.delete-chat-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+}
+.history-item:hover .delete-chat-btn { opacity: 1; }
+.delete-chat-btn:hover { background: #4a1515; color: #ff9999; }
 
 .sidebar-footer { padding-top: 10px; border-top: 1px solid #333; }
 .nav-item {
@@ -156,9 +172,22 @@ body {
     gap: 10px;
     background-color: #1e1f20;
     padding: 12px;
-    border-radius: 30px;
+    border-radius: 20px;
+    align-items: flex-end; /* Align button to bottom if textarea grows */
 }
-input { flex: 1; background: transparent; border: none; color: white; font-size: 1rem; outline: none; }
+textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    max-height: 200px;
+    overflow-y: auto;
+}
 button { background: transparent; border: none; color: white; cursor: pointer; }
 .disclaimer { text-align: center; font-size: 0.75rem; color: #555; margin-top: 10px; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -187,9 +216,41 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .danger-btn:hover { background: #661b1b; }
 
 /* MOBILE RESPONSIVE */
+.mobile-only { display: none; }
+
 @media (max-width: 700px) {
-    .sidebar { display: none; } 
+    .mobile-only { display: block; }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        z-index: 50;
+        transform: translateX(-100%);
+    }
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
     .chat-box, .input-area { padding-left: 15px; padding-right: 15px; }
+
+    /* Overlay when sidebar is open */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 40;
+        display: none;
+    }
+    .sidebar-overlay.show { display: block; }
 }
 
 /* MARKDOWN STYLES */
@@ -223,12 +284,31 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* Style Code Blocks (like ```lua code ```) */
 .bot-message pre {
     background: #00000050;
-    padding: 10px;
+    padding: 30px 10px 10px 10px; /* Top padding for copy button */
     border-radius: 8px;
     overflow-x: auto; /* Scroll if code is too long */
     font-family: 'Consolas', 'Monaco', monospace;
     font-size: 0.9em;
     border: 1px solid #ffffff10;
+    position: relative;
+}
+
+.copy-code-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #333;
+    color: #ccc;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.copy-code-btn:hover {
+    background: #444;
+    color: white;
 }
 
 /* Style Inline */
