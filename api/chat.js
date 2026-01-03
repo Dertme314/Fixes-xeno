@@ -1,4 +1,6 @@
 // api/chat.js
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,17 +13,49 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid message format." });
   }
 
+  // --- NEW: LOAD CONTEXT FROM FILE ---
+  let systemContext = "";
+  try {
+    // This looks for context.md inside the current "api" folder
+    const contextPath = path.join(process.cwd(), 'api', 'context.md');
+    systemContext = fs.readFileSync(contextPath, 'utf8');
+  } catch (error) {
+    console.error("Could not read context.md:", error);
+    // Fallback if file is missing
+    systemContext = "You are a helpful assistant for Xeno Helpers."; 
+  }
+
+  // Define the Role: Mentor for Xeno Helpers
+  const masterPrompt = `
+    ${systemContext}
+    
+    IMPORTANT INSTRUCTION:
+    You are a support assistant strictly for Xeno Helpers (the support). 
+    Your goal is to train them on how to fix issues. 
+    Use the context above to answer their technical questions.
+  `;
+
+  // Insert our System Prompt at the very start of the conversation
+  // We filter out any old system messages from the client to enforce ours
+  const cleanMessages = fullConversation.filter(msg => msg.role !== 'system');
+  
+  const finalMessages = [
+    { role: "system", content: masterPrompt },
+    ...cleanMessages
+  ];
+  // -----------------------------------
+
   // 1. Create a list of keys to try in order
   const apiKeys = [
     process.env.API_KEY,   // Primary
     process.env.API_KEY_2, // Backup 1
-    process.env.API_KEY_3  // Backup 2 (Optional, add as many as you want)
-  ].filter(Boolean); // This removes any keys that are missing/undefined
+    process.env.API_KEY_3  // Backup 2
+  ].filter(Boolean);
 
   if (apiKeys.length === 0) {
     return res.status(500).json({
       error: "API keys missing.",
-      details: "Add API_KEY and API_KEY_2 in Vercel > Environment Variables."
+      details: "Add API_KEY in Vercel > Environment Variables."
     });
   }
 
@@ -31,8 +65,6 @@ export default async function handler(req, res) {
   // 2. Loop through the keys
   for (const currentKey of apiKeys) {
     try {
-      // console.log(`Attempting with key ending in ...${currentKey.slice(-4)}`);
-
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -43,7 +75,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           model: "tngtech/deepseek-r1t2-chimera:free",
-          messages: fullConversation,
+          messages: finalMessages, // <--- We send the updated list here
           temperature: 0.7,
           max_tokens: 2000
         })
@@ -51,19 +83,15 @@ export default async function handler(req, res) {
 
       const data = await response.json();
 
-      // IF SUCCESS: Return immediately and stop the function
       if (response.ok) {
         return res.status(200).json({
           choices: data.choices
         });
       }
 
-      // IF FAILURE: Log it, save error, and continue loop to next key
       console.warn(`Key ending in ...${currentKey.slice(-4)} failed: ${response.status}`);
       lastStatus = response.status;
       lastError = data.error || "External API Error";
-      
-      // The loop will now restart with the next key in the list...
 
     } catch (err) {
       console.error("Network Error with key:", err);
@@ -71,7 +99,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // 3. If we finish the loop and NOTHING worked
   return res.status(lastStatus).json({
     error: "All API keys failed.",
     details: lastError
