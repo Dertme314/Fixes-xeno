@@ -16,7 +16,15 @@ const storageInfo = document.getElementById('storage-info');
 
 // Constants
 const STORAGE_KEY = 'xeno_chats_v1';
-const SYSTEM_PROMPT = `You are Xeno Helper. You help users with the Xeno executor. Do not mention you are an AI. Be concise.`;
+const SYSTEM_PROMPT = `You are a helpful assistant for Xeno Helpers. Be concise.`;
+const masterPrompt = `
+    ${systemContext}
+    
+    IMPORTANT INSTRUCTION:
+    You are a support assistant strictly for Xeno Helpers (the support). 
+    Your goal is to train them on how to fix issues. 
+    Use the context above to answer their technical questions.
+  `;
 
 // State
 let allChats = [];
