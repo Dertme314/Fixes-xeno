@@ -14,16 +14,16 @@ const closeSettings = document.getElementById('close-settings');
 const clearDataBtn = document.getElementById('clear-data-btn');
 const storageInfo = document.getElementById('storage-info');
 
-// Mobile Menu
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const sidebar = document.querySelector('.sidebar');
-let sidebarOverlay;
+// Mobile Menu (Updated ID to match new HTML)
+const mobileMenuBtn = document.getElementById('mobile-menu-open'); 
+const mobileMenuCloseBtn = document.getElementById('mobile-menu-close'); // Added close btn
+const sidebar = document.getElementById('sidebar'); // Changed to ID to match new HTML
 
 // --- CONSTANTS & PROMPTS ---
 const STORAGE_KEY = 'xeno_chats_v1';
 
 // 1. Base Context (The knowledge base)
-const systemContext = `You are Xeno Helper. You help users with the Xeno executor. Do not mention you are an AI. Be concise.`;
+const systemContext = `You are Xeno Helper. You help users with the Xeno executor. Do not mention you are an AI. Be concise. formatting: Use Markdown.`;
 
 // 2. Master Prompt (The actual instruction sent to the AI)
 const masterPrompt = `
@@ -48,13 +48,6 @@ window.addEventListener('DOMContentLoaded', () => {
     } else {
         startNewChat();
     }
-
-    // Create overlay for mobile
-    sidebarOverlay = document.createElement('div');
-    sidebarOverlay.className = 'sidebar-overlay';
-    document.body.appendChild(sidebarOverlay);
-
-    sidebarOverlay.addEventListener('click', closeSidebar);
 });
 
 // --- CORE CHAT LOGIC ---
@@ -71,7 +64,6 @@ function startNewChat() {
     const newChat = {
         id: currentChatId,
         title: "New Chat",
-        // UPDATED: Uses masterPrompt instead of SYSTEM_PROMPT
         messages: [{ role: "system", content: masterPrompt }],
         timestamp: Date.now()
     };
@@ -79,12 +71,22 @@ function startNewChat() {
     saveToStorage();
     renderHistory();
     renderChatUI();
+    
+    // Close sidebar on mobile when starting new chat
+    if (window.innerWidth <= 768) {
+        sidebar.classList.remove('show');
+    }
 }
 
 function loadChat(id) {
     currentChatId = id;
     renderHistory();
     renderChatUI();
+    
+    // Close sidebar on mobile when selecting chat
+    if (window.innerWidth <= 768) {
+        sidebar.classList.remove('show');
+    }
 }
 
 chatForm.addEventListener('submit', async (e) => {
@@ -105,7 +107,7 @@ chatForm.addEventListener('submit', async (e) => {
 
     // 3. Update Title if it's the first user message
     if (chat.messages.length === 1) {
-        chat.title = message.substring(0, 20) + (message.length > 20 ? "..." : "");
+        chat.title = message.substring(0, 30);
         renderHistory(); // Refresh sidebar title
     }
 
@@ -113,6 +115,10 @@ chatForm.addEventListener('submit', async (e) => {
     chat.messages.push({ role: "user", content: message });
     saveToStorage();
     renderChatUI(); // Update UI immediately
+    
+    // Reset Textarea Height
+    userInput.value = '';
+    userInput.style.height = 'auto';
 
     // 5. API Call
     const loadingId = appendLoader();
@@ -153,15 +159,13 @@ chatForm.addEventListener('submit', async (e) => {
     } finally {
         setInputState(true);
         userInput.focus();
-        userInput.value = ''; // Ensure clear
-        userInput.style.height = 'auto'; // Reset height
     }
 });
 
 // Auto-resize textarea
-userInput.addEventListener('input', () => {
-    userInput.style.height = 'auto';
-    userInput.style.height = userInput.scrollHeight + 'px';
+userInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
 });
 
 // Handle Enter key (submit if no shift)
@@ -179,10 +183,10 @@ function renderChatUI() {
     chatBox.innerHTML = '';
     const chat = allChats.find(c => c.id === currentChatId);
 
+    // Logic for showing Welcome Screen
     if (!chat || chat.messages.length <= 1) {
-        // Show Welcome Screen if only system prompt exists
         chatBox.appendChild(welcomeScreen);
-        welcomeScreen.style.display = 'flex';
+        welcomeScreen.classList.remove('hidden'); // Ensure it's visible via class
         return;
     }
 
@@ -193,19 +197,29 @@ function renderChatUI() {
 
     // Render messages (skip index 0 which is system prompt)
     chat.messages.slice(1).forEach(msg => {
-        const div = document.createElement('div');
-        div.classList.add('message', msg.role === 'user' ? 'user-message' : 'bot-message');
+        const wrapper = document.createElement('div');
+        // Add specific classes for the new CSS
+        wrapper.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
+        
         if (msg.role === 'user') {
-            div.innerHTML = msg.content.replace(/\n/g, '<br>');
+            // UI CHANGE: Wrap user text in the bubble div
+            const bubble = document.createElement('div');
+            bubble.className = 'user-message-content';
+            bubble.innerHTML = msg.content.replace(/\n/g, '<br>');
+            wrapper.appendChild(bubble);
         } else {
             // Check if marked is available, fallback to text if not
-            div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(msg.content) : msg.content;
+            wrapper.innerHTML = (typeof marked !== 'undefined') ? marked.parse(msg.content) : msg.content;
 
             // Add copy buttons to code blocks
-            div.querySelectorAll('pre').forEach(pre => {
+            wrapper.querySelectorAll('pre').forEach(pre => {
                 const copyBtn = document.createElement('button');
-                copyBtn.classList.add('copy-code-btn');
+                copyBtn.className = 'copy-code-btn'; // Updated class in CSS?
                 copyBtn.innerText = 'Copy';
+                copyBtn.style.position = 'absolute';
+                copyBtn.style.top = '10px';
+                copyBtn.style.right = '10px';
+                
                 copyBtn.onclick = () => {
                     const code = pre.querySelector('code')?.innerText || pre.innerText;
                     navigator.clipboard.writeText(code).then(() => {
@@ -217,18 +231,18 @@ function renderChatUI() {
                 pre.appendChild(copyBtn);
             });
         }
-        chatBox.appendChild(div);
+        chatBox.appendChild(wrapper);
     });
     
-    chatBox.scrollTop = chatBox.scrollHeight;
+    // Scroll to bottom
+    window.scrollTo(0, document.body.scrollHeight);
 }
 
 function renderHistory() {
     historyList.innerHTML = '';
     allChats.forEach(chat => {
         const container = document.createElement('div');
-        container.classList.add('history-item');
-        if (chat.id === currentChatId) container.classList.add('active');
+        container.className = `history-item ${chat.id === currentChatId ? 'active' : ''}`;
 
         // Title
         const titleSpan = document.createElement('span');
@@ -237,10 +251,10 @@ function renderHistory() {
         titleSpan.style.overflow = "hidden";
         titleSpan.style.textOverflow = "ellipsis";
 
-        // Delete Button
+        // Delete Button (UI CHANGE: Using Material Symbols)
         const delBtn = document.createElement('button');
-        delBtn.innerHTML = "&times;";
-        delBtn.classList.add('delete-chat-btn');
+        delBtn.className = 'delete-chat-btn material-symbols-outlined';
+        delBtn.innerHTML = "delete"; // Material Icon name
         delBtn.onclick = (e) => deleteChat(e, chat.id);
 
         container.appendChild(titleSpan);
@@ -273,10 +287,20 @@ function deleteChat(e, id) {
 function appendLoader() {
     const div = document.createElement('div');
     div.id = 'temp-loader';
-    div.classList.add('message', 'bot-message', 'typing-indicator');
-    div.innerText = "Xeno is thinking...";
+    div.className = 'message bot-message';
+    // UI CHANGE: Spinning icon instead of text
+    div.innerHTML = `<span class="material-symbols-outlined" style="animation:spin 1s infinite; font-size:24px;">sync</span>`;
+    
+    // Add the keyframe animation if not in CSS
+    if (!document.getElementById('loader-style')) {
+        const style = document.createElement('style');
+        style.id = 'loader-style';
+        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+    }
+    
     chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    window.scrollTo(0, document.body.scrollHeight);
     return 'temp-loader';
 }
 
@@ -287,8 +311,8 @@ function removeLoader(id) {
 
 function appendTempError(msg) {
     const div = document.createElement('div');
-    div.classList.add('message', 'bot-message');
-    div.style.color = '#ff6b6b';
+    div.className = 'message bot-message';
+    div.style.color = '#ffb4b4'; // Lighter red for dark mode
     div.innerText = msg;
     chatBox.appendChild(div);
 }
@@ -319,22 +343,20 @@ function setInputState(enabled) {
 
 // --- BUTTON EVENTS ---
 
-// Mobile Menu
+// Mobile Menu Handlers
 if (mobileMenuBtn) {
     mobileMenuBtn.addEventListener('click', () => {
         sidebar.classList.add('show');
-        sidebarOverlay.classList.add('show');
     });
 }
-
-function closeSidebar() {
-    sidebar.classList.remove('show');
-    sidebarOverlay.classList.remove('show');
+if (mobileMenuCloseBtn) {
+    mobileMenuCloseBtn.addEventListener('click', () => {
+        sidebar.classList.remove('show');
+    });
 }
 
 newChatBtn.addEventListener('click', () => {
     startNewChat();
-    closeSidebar();
 });
 
 // Settings Logic
