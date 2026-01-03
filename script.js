@@ -116,14 +116,20 @@ chatForm.addEventListener('submit', async (e) => {
 
     // 5. API Call
     const loadingId = appendLoader();
+    
+    // Timeout Controller (Fix for "stuck thinking")
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: chat.messages })
+            body: JSON.stringify({ messages: chat.messages }),
+            signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
         const data = await response.json();
         removeLoader(loadingId);
 
@@ -136,9 +142,14 @@ chatForm.addEventListener('submit', async (e) => {
             appendTempError("Server Error: " + (data.error || "Unknown"));
         }
     } catch (err) {
+        clearTimeout(timeoutId);
         removeLoader(loadingId);
-        appendTempError("Network Error");
-        console.error(err);
+        if (err.name === 'AbortError') {
+            appendTempError("Request timed out. Please try again.");
+        } else {
+            appendTempError("Network Error");
+            console.error(err);
+        }
     } finally {
         setInputState(true);
         userInput.focus();
