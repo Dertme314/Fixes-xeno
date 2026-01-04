@@ -4,6 +4,7 @@ const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
 const historyList = document.getElementById('history-list');
+const stopBtn = document.getElementById('stop-btn');
 const newChatBtn = document.getElementById('new-chat-btn');
 const welcomeScreen = document.getElementById('welcome-screen');
 
@@ -43,7 +44,7 @@ Use the context above to answer their technical questions.
 
 const PROMPTS = {
     fast: "Answer quickly and concisely.",
-    thinking: "Think long and hard to solve complex problems. Break down the problem step by step and provide detailed reasoning."
+    thinking: "Think step-by-step. Enclose your thought process in <think> tags, then provide the final answer."
 };
 
 let currentMode = 'fast';
@@ -55,6 +56,8 @@ function getMasterPrompt() {
 // State
 let allChats = [];
 let currentChatId = null;
+let currentController = null;
+let isUserStop = false;
 
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
@@ -176,44 +179,140 @@ chatForm.addEventListener('submit', async (e) => {
     // 5. API Call
     const loadingId = appendLoader();
     
-    // Timeout Controller (Fix for "stuck thinking")
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    // Setup Abort Controller
+    if (currentController) currentController.abort(); // Safety check
+    currentController = new AbortController();
+    isUserStop = false;
+    if (stopBtn) stopBtn.classList.remove('hidden');
+
+    const timeoutId = setTimeout(() => {
+        if (currentController) currentController.abort();
+    }, 120000); // 120s timeout
 
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages: chat.messages }),
-            signal: controller.signal
+            signal: currentController.signal
         });
 
         clearTimeout(timeoutId);
-        const data = await response.json();
         removeLoader(loadingId);
 
-        if (response.ok && data.choices?.length > 0) {
-            const aiMsg = data.choices[0].message.content;
-            chat.messages.push({ role: "assistant", content: aiMsg });
-            saveToStorage();
-            renderChatUI();
-        } else {
-            appendTempError("Server Error: " + (data.error || "Unknown"));
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Server Error");
         }
+
+        // --- STREAMING LOGIC ---
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+        let buffer = "";
+
+        // Create a placeholder message for the AI
+        const aiMsgObj = { role: "assistant", content: "" };
+        chat.messages.push(aiMsgObj);
+        saveToStorage();
+        renderChatUI(); // Renders the empty bubble
+
+        // Helper to update the specific message bubble in the DOM
+        const updateLastBubble = (text) => {
+            const bubbles = chatBox.querySelectorAll('.bot-message');
+            const lastBubble = bubbles[bubbles.length - 1];
+            if (!lastBubble) return;
+
+            // Check if user has toggled the details element
+            const existingDetails = lastBubble.querySelector('.thinking-details');
+            const wasOpen = existingDetails ? existingDetails.hasAttribute('open') : true; // Default to open during stream
+
+            // Use helper to format
+            lastBubble.innerHTML = formatMessage(text, wasOpen);
+
+            // Re-attach copy buttons dynamically during stream
+            lastBubble.querySelectorAll('pre').forEach(pre => {
+                if (pre.querySelector('.copy-code-btn')) return; // Skip if already exists
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-code-btn';
+                copyBtn.innerText = 'Copy';
+                copyBtn.style.position = 'absolute';
+                copyBtn.style.top = '10px';
+                copyBtn.style.right = '10px';
+                copyBtn.onclick = () => {
+                    const code = pre.querySelector('code')?.innerText || pre.innerText;
+                    navigator.clipboard.writeText(code).then(() => {
+                        copyBtn.innerText = 'Copied!';
+                        setTimeout(() => copyBtn.innerText = 'Copy', 2000);
+                    });
+                };
+                pre.style.position = 'relative';
+                pre.appendChild(copyBtn);
+            });
+            
+            // Auto-scroll
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            buffer += chunk;
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep incomplete line in buffer
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.slice(6);
+                    if (dataStr === '[DONE]') continue;
+                    try {
+                        const data = JSON.parse(dataStr);
+                        const content = data.choices[0]?.delta?.content || "";
+                        fullText += content;
+                        aiMsgObj.content = fullText; // Update state
+                        updateLastBubble(fullText);  // Update UI
+                    } catch (e) { console.error("Stream parse error", e); }
+                }
+            }
+        }
+        
+        // Final save
+        saveToStorage();
+        // Re-render to ensure code copy buttons etc are attached properly
+        renderChatUI(); 
+
     } catch (err) {
         clearTimeout(timeoutId);
         removeLoader(loadingId);
         if (err.name === 'AbortError') {
-            appendTempError("Request timed out. Please try again.");
+            if (isUserStop) {
+                appendTempError("Generation stopped.");
+            } else {
+                appendTempError("Request timed out. Please try again.");
+            }
         } else {
-            appendTempError("Network Error");
+            appendTempError("Error: " + err.message);
             console.error(err);
         }
     } finally {
         setInputState(true);
         userInput.focus();
+        if (stopBtn) stopBtn.classList.add('hidden');
+        currentController = null;
     }
 });
+
+// Stop Button Listener
+if (stopBtn) {
+    stopBtn.addEventListener('click', () => {
+        if (currentController) {
+            isUserStop = true;
+            currentController.abort();
+        }
+    });
+}
 
 // Auto-resize textarea
 userInput.addEventListener('input', function() {
@@ -231,6 +330,31 @@ userInput.addEventListener('keydown', (e) => {
 });
 
 // --- RENDER FUNCTIONS ---
+
+function formatMessage(text, isOpen = false) {
+    // Parse <think> tags
+    const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+    const thinkContent = thinkMatch ? thinkMatch[1] : null;
+    // Remove the think block to get the main answer
+    let mainContent = text.replace(/<think>[\s\S]*?<\/think>/, '').replace(/<think>[\s\S]*/, '');
+
+    let html = '';
+    if (thinkContent) {
+        const openAttr = isOpen ? 'open' : '';
+        html += `<details class="thinking-details" ${openAttr}>
+            <summary class="thinking-summary">
+                <span class="material-symbols-outlined" style="font-size:16px">psychology</span> 
+                Thinking Process
+                <span class="material-symbols-outlined" style="font-size:16px; margin-left:auto;">expand_more</span>
+            </summary>
+            <div class="thinking-content">
+                ${typeof marked !== 'undefined' ? marked.parse(thinkContent) : thinkContent}
+            </div>
+        </details>`;
+    }
+    html += typeof marked !== 'undefined' ? marked.parse(mainContent) : mainContent;
+    return html;
+}
 
 function renderChatUI() {
     chatBox.innerHTML = '';
@@ -261,8 +385,8 @@ function renderChatUI() {
             bubble.innerHTML = msg.content.replace(/\n/g, '<br>');
             wrapper.appendChild(bubble);
         } else {
-            // Check if marked is available, fallback to text if not
-            wrapper.innerHTML = (typeof marked !== 'undefined') ? marked.parse(msg.content) : msg.content;
+            // Use the helper to handle thinking blocks and markdown
+            wrapper.innerHTML = formatMessage(msg.content, false); // Default collapsed in history
 
             // Add copy buttons to code blocks
             wrapper.querySelectorAll('pre').forEach(pre => {
@@ -288,7 +412,7 @@ function renderChatUI() {
     });
     
     // Scroll to bottom
-    window.scrollTo(0, document.body.scrollHeight);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function renderHistory() {
@@ -347,16 +471,8 @@ function appendLoader() {
   <span style="margin-left: 8px; vertical-align: middle; font-family: sans-serif;">Thinking...</span>
 `;
     
-    // Add the keyframe animation if not in CSS
-    if (!document.getElementById('loader-style')) {
-        const style = document.createElement('style');
-        style.id = 'loader-style';
-        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
-        document.head.appendChild(style);
-    }
-    
     chatBox.appendChild(div);
-    window.scrollTo(0, document.body.scrollHeight);
+    chatBox.scrollTop = chatBox.scrollHeight;
     return 'temp-loader';
 }
 

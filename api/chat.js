@@ -35,12 +35,20 @@ export default async function handler(req, res) {
     Use the context above to answer their technical questions.
   `;
 
-  // Insert our System Prompt at the very start of the conversation
-  // We filter out any old system messages from the client to enforce ours
+  // --- FIX: MERGE CLIENT SYSTEM PROMPT (MODES) WITH SERVER CONTEXT ---
+  const clientSystemMsg = fullConversation.find(msg => msg.role === 'system');
   const cleanMessages = fullConversation.filter(msg => msg.role !== 'system');
   
+  // Start with the server's master prompt (context.md)
+  let finalSystemContent = masterPrompt;
+
+  // If the client sent a system message (containing the Mode Instruction), append it
+  if (clientSystemMsg && clientSystemMsg.content) {
+    finalSystemContent += "\n\n" + clientSystemMsg.content;
+  }
+
   const finalMessages = [
-    { role: "system", content: masterPrompt },
+    { role: "system", content: finalSystemContent },
     ...cleanMessages
   ];
   // -----------------------------------
@@ -77,21 +85,32 @@ export default async function handler(req, res) {
           model: "tngtech/deepseek-r1t2-chimera:free",
           messages: finalMessages, // <--- We send the updated list here
           temperature: 0.7,
-          max_tokens: 2000
+          max_tokens: 2000,
+          stream: true // <--- ENABLE STREAMING
         })
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        return res.status(200).json({
-          choices: data.choices
+        // Set headers for Server-Sent Events (SSE)
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
         });
+
+        // Pipe the stream from OpenRouter directly to the client
+        for await (const chunk of response.body) {
+          res.write(chunk);
+        }
+        res.end();
+        return; // Exit successfully
       }
 
+      // If not OK, try to read error body
+      const errorText = await response.text();
       console.warn(`Key ending in ...${currentKey.slice(-4)} failed: ${response.status}`);
       lastStatus = response.status;
-      lastError = data.error || "External API Error";
+      lastError = errorText || "External API Error";
 
     } catch (err) {
       console.error("Network Error with key:", err);

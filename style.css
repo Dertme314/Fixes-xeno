@@ -252,10 +252,57 @@ body {
     padding-left: 20px; /* Align with input */
     color: var(--text-primary);
 }
+
+/* --- THINKING PROCESS STYLES --- */
+.thinking-details {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid var(--accent-blue);
+    margin-bottom: 15px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.thinking-summary {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+.thinking-summary:hover { background-color: rgba(255, 255, 255, 0.05); }
+.thinking-summary::marker, .thinking-summary::-webkit-details-marker { display: none; } /* Hide default triangle */
+
+.thinking-content {
+    padding: 0 15px 15px 15px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
 /* Markdown Styles */
 .bot-message strong { color: #fff; font-weight: 600; }
 .bot-message code { font-family: 'Consolas', monospace; background: #282a2c; padding: 2px 5px; border-radius: 4px; }
 .bot-message pre { background: #1e1f20; padding: 15px; border-radius: 10px; overflow-x: auto; border: 1px solid #333; }
+
+.copy-code-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.copy-code-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
 
 /* --- INPUT AREA --- */
 .input-container {
@@ -272,6 +319,24 @@ body {
 }
 /* Adjust left position if desktop sidebar is visible */
 @media(min-width: 769px) { .input-container { left: 280px; } }
+
+.stop-btn {
+    background: #282a2c;
+    border: 1px solid #333;
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+.stop-btn:hover { background: #37393b; border-color: #444; }
+.stop-btn .material-symbols-outlined { font-size: 18px; }
 
 .input-box {
     width: 100%;
@@ -339,3 +404,5 @@ textarea {
     .input-container { left: 0; }
     .gradient-text, .sub-greeting { font-size: 2.5rem; }
 }
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
