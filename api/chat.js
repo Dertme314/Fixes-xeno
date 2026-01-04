@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Could not read context.md:", error);
     // Fallback if file is missing
-    systemContext = "You are a helpful assistant for Xeno Helpers."; 
+    systemContext = "You are a helpful assistant training Xeno Helpers."; 
   }
 
   // Define the Role: Mentor for Xeno Helpers
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
           model: "tngtech/deepseek-r1t2-chimera:free",
           messages: finalMessages, // <--- We send the updated list here
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 3000,
           stream: true // <--- ENABLE STREAMING
         })
       });
