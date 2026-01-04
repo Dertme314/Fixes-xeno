@@ -14,6 +14,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid message format." });
   }
 
+  // --- PROMPT DEFINITIONS ---
+  const PROMPTS = {
+    fast: "Answer very quickly and concisely.",
+    thinking: "Think step-by-step. Enclose your thought process in <think> tags, then provide the final answer."
+  };
+
   // --- NEW: LOAD CONTEXT FROM FILE ---
   let systemContext = "";
   try {
@@ -36,17 +42,13 @@ export default async function handler(req, res) {
     Use the context above to answer their technical questions.
   `;
 
-  // --- FIX: MERGE CLIENT SYSTEM PROMPT (MODES) WITH SERVER CONTEXT ---
-  const clientSystemMsg = fullConversation.find(msg => msg.role === 'system');
+  // --- FIX: REBUILD SYSTEM PROMPT SERVER-SIDE ---
+  // Filter out the client's system message to avoid duplication/conflicts
   const cleanMessages = fullConversation.filter(msg => msg.role !== 'system');
   
-  // Start with the server's master prompt (context.md)
-  let finalSystemContent = masterPrompt;
-
-  // If the client sent a system message (containing the Mode Instruction), append it
-  if (clientSystemMsg && clientSystemMsg.content) {
-    finalSystemContent += "\n\n" + clientSystemMsg.content;
-  }
+  // Construct Final System Content: Context + Role + Mode Instruction
+  const modeInstruction = PROMPTS[mode] || PROMPTS['fast'];
+  const finalSystemContent = `${masterPrompt}\n\nMODE INSTRUCTION:\n${modeInstruction}`;
 
   const finalMessages = [
     { role: "system", content: finalSystemContent },

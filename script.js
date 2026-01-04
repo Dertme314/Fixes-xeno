@@ -588,7 +588,6 @@ function setInputState(enabled) {
 
 if (mobileMenuBtn) {
     mobileMenuBtn.addEventListener('click', () => {
-        sidebar.classList.add('show');
         if (window.innerWidth <= 768) {
             sidebar.classList.add('show');
         } else {
@@ -599,7 +598,6 @@ if (mobileMenuBtn) {
 }
 if (mobileMenuCloseBtn) {
     mobileMenuCloseBtn.addEventListener('click', () => {
-        sidebar.classList.remove('show');
         if (window.innerWidth <= 768) {
             sidebar.classList.remove('show');
         } else {
