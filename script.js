@@ -459,12 +459,37 @@ function renderChatUI() {
                 actions.appendChild(redoBtn);
             }
 
-            // Good/Bad Feedback (Visual only)
+            // Good/Bad Feedback
             const goodBtn = createActionBtn('thumb_up', 'Good Response');
             const badBtn = createActionBtn('thumb_down', 'Bad Response');
             
-            goodBtn.onclick = () => { goodBtn.style.color = '#a8c7fa'; badBtn.style.color = ''; };
-            badBtn.onclick = () => { badBtn.style.color = '#ffb4b4'; goodBtn.style.color = ''; };
+            // Restore state
+            if (msg.feedback === 'good') goodBtn.style.color = '#a8c7fa';
+            if (msg.feedback === 'bad') badBtn.style.color = '#ffb4b4';
+            
+            goodBtn.onclick = () => { 
+                if (msg.feedback === 'good') {
+                    msg.feedback = null; // Toggle off
+                    goodBtn.style.color = '';
+                } else {
+                    msg.feedback = 'good';
+                    goodBtn.style.color = '#a8c7fa';
+                    badBtn.style.color = '';
+                }
+                saveToStorage();
+            };
+            
+            badBtn.onclick = () => { 
+                if (msg.feedback === 'bad') {
+                    msg.feedback = null; // Toggle off
+                    badBtn.style.color = '';
+                } else {
+                    msg.feedback = 'bad';
+                    badBtn.style.color = '#ffb4b4';
+                    goodBtn.style.color = '';
+                }
+                saveToStorage();
+            };
             
             actions.appendChild(goodBtn);
             actions.appendChild(badBtn);

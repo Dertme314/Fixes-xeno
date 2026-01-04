@@ -12,6 +12,12 @@
 
 * { box-sizing: border-box; }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+
 body {
     background-color: var(--bg-body);
     color: var(--text-primary);
@@ -169,8 +175,6 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 850px;
-    margin: 0 auto;
 }
 
 /* Welcome Screen */
@@ -180,6 +184,9 @@ body {
     flex-direction: column;
     justify-content: center;
     padding: 20px;
+    width: 100%;
+    max-width: 850px;
+    margin: 0 auto;
 }
 
 .greeting-container { margin-bottom: 40px; }
@@ -233,9 +240,11 @@ body {
 /* Messages */
 .message {
     padding: 20px;
-    margin-bottom: 10px;
+    margin: 0 auto 10px auto;
     line-height: 1.6;
     animation: fadeUp 0.3s ease;
+    width: 100%;
+    max-width: 850px;
 }
 .user-message {
     display: flex;
