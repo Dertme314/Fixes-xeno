@@ -104,6 +104,22 @@
 10. Issue: No Client Found / Cannot Select Client
 Cause: UI rendering issue or process detection failure. Solution: 1.  Possible Fix (Not Universal): Redownload Xeno and specifically select the "Legacy" UI option during download. 2.  
 ---
+## 📂 Folder Architecture
+
+**How to Access Files:**
+To access the internal Xeno files (scripts, configs, workspace), press `Win + R`, type `%localappdata%/xeno`, and hit Enter.
+
+**Directory Layouts:**
+
+* **New UI Structure:**
+    * `\autoexec`: Scripts placed here run automatically when Xeno attaches.
+    * `\workspace`: The default folder where scripts save and read files.
+    * *(Note: The New UI does not use a visible `tabs` folder and does not have tabs are null issue.)*
+
+* **Legacy UI Structure:**
+    * `\autoexec`: Scripts placed here run automatically when Xeno attaches.
+    * `\workspace`: The default folder where scripts save and read files.
+    * `\tabs`: Stores the cache of open tabs and scripts in the editor.
 
 ## 🔗 Useful Links
 
