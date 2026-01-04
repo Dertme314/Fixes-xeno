@@ -176,7 +176,11 @@ chatForm.addEventListener('submit', async (e) => {
     userInput.value = '';
     userInput.style.height = 'auto';
 
-    // 5. API Call
+    // 5. Trigger Generation
+    await generateResponse(chat);
+});
+
+async function generateResponse(chat) {
     const loadingId = appendLoader();
     
     // Setup Abort Controller
@@ -223,15 +227,19 @@ chatForm.addEventListener('submit', async (e) => {
             const lastBubble = bubbles[bubbles.length - 1];
             if (!lastBubble) return;
 
+            // Target the text container inside the new structure
+            const contentDiv = lastBubble.querySelector('.message-text');
+            if (!contentDiv) return;
+
             // Check if user has toggled the details element
-            const existingDetails = lastBubble.querySelector('.thinking-details');
+            const existingDetails = contentDiv.querySelector('.thinking-details');
             const wasOpen = existingDetails ? existingDetails.hasAttribute('open') : true; // Default to open during stream
 
             // Use helper to format
-            lastBubble.innerHTML = formatMessage(text, wasOpen);
+            contentDiv.innerHTML = formatMessage(text, wasOpen);
 
             // Re-attach copy buttons dynamically during stream
-            lastBubble.querySelectorAll('pre').forEach(pre => {
+            contentDiv.querySelectorAll('pre').forEach(pre => {
                 if (pre.querySelector('.copy-code-btn')) return; // Skip if already exists
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'copy-code-btn';
@@ -263,6 +271,8 @@ chatForm.addEventListener('submit', async (e) => {
             const lines = buffer.split('\n');
             buffer = lines.pop(); // Keep incomplete line in buffer
 
+            let chunkContent = "";
+
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
                     const dataStr = line.slice(6);
@@ -270,11 +280,15 @@ chatForm.addEventListener('submit', async (e) => {
                     try {
                         const data = JSON.parse(dataStr);
                         const content = data.choices[0]?.delta?.content || "";
-                        fullText += content;
-                        aiMsgObj.content = fullText; // Update state
-                        updateLastBubble(fullText);  // Update UI
+                        chunkContent += content;
                     } catch (e) { console.error("Stream parse error", e); }
                 }
+            }
+            
+            if (chunkContent) {
+                fullText += chunkContent;
+                aiMsgObj.content = fullText; // Update state
+                updateLastBubble(fullText);  // Update UI
             }
         }
         
@@ -302,7 +316,7 @@ chatForm.addEventListener('submit', async (e) => {
         if (stopBtn) stopBtn.classList.add('hidden');
         currentController = null;
     }
-});
+}
 
 // Stop Button Listener
 if (stopBtn) {
@@ -339,7 +353,7 @@ function formatMessage(text, isOpen = false) {
     let mainContent = text.replace(/<think>[\s\S]*?<\/think>/, '').replace(/<think>[\s\S]*/, '');
 
     let html = '';
-    if (thinkContent) {
+    if (thinkMatch) {
         const openAttr = isOpen ? 'open' : '';
         html += `<details class="thinking-details" ${openAttr}>
             <summary class="thinking-summary">
@@ -348,7 +362,7 @@ function formatMessage(text, isOpen = false) {
                 <span class="material-symbols-outlined" style="font-size:16px; margin-left:auto;">expand_more</span>
             </summary>
             <div class="thinking-content">
-                ${typeof marked !== 'undefined' ? marked.parse(thinkContent) : thinkContent}
+                ${typeof marked !== 'undefined' ? marked.parse(thinkContent || "") : (thinkContent || "")}
             </div>
         </details>`;
     }
@@ -385,11 +399,22 @@ function renderChatUI() {
             bubble.innerHTML = msg.content.replace(/\n/g, '<br>');
             wrapper.appendChild(bubble);
         } else {
-            // Use the helper to handle thinking blocks and markdown
-            wrapper.innerHTML = formatMessage(msg.content, false); // Default collapsed in history
+            // --- BOT MESSAGE STRUCTURE ---
+            const row = document.createElement('div');
+            row.className = 'message-row';
+            
+            // 1. Avatar
+            const avatar = document.createElement('div');
+            avatar.className = 'ai-avatar';
+            avatar.innerHTML = '<span class="material-symbols-outlined">smart_toy</span>';
+            
+            // 2. Text Content
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.innerHTML = formatMessage(msg.content, false);
 
             // Add copy buttons to code blocks
-            wrapper.querySelectorAll('pre').forEach(pre => {
+            textDiv.querySelectorAll('pre').forEach(pre => {
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'copy-code-btn'; // Updated class in CSS?
                 copyBtn.innerText = 'Copy';
@@ -407,6 +432,44 @@ function renderChatUI() {
                 pre.style.position = 'relative';
                 pre.appendChild(copyBtn);
             });
+
+            row.appendChild(avatar);
+            row.appendChild(textDiv);
+            wrapper.appendChild(row);
+
+            // 3. Action Toolbar
+            const actions = document.createElement('div');
+            actions.className = 'message-actions';
+            
+            // Copy Response
+            const copyBtn = createActionBtn('content_copy', 'Copy Response');
+            copyBtn.onclick = () => navigator.clipboard.writeText(msg.content);
+            actions.appendChild(copyBtn);
+
+            // Regenerate (Only for the last message)
+            const isLast = chat.messages.indexOf(msg) === chat.messages.length - 1;
+            if (isLast) {
+                const redoBtn = createActionBtn('refresh', 'Regenerate');
+                redoBtn.onclick = () => {
+                    chat.messages.pop(); // Remove current AI message
+                    saveToStorage();
+                    renderChatUI();
+                    generateResponse(chat); // Re-run generation
+                };
+                actions.appendChild(redoBtn);
+            }
+
+            // Good/Bad Feedback (Visual only)
+            const goodBtn = createActionBtn('thumb_up', 'Good Response');
+            const badBtn = createActionBtn('thumb_down', 'Bad Response');
+            
+            goodBtn.onclick = () => { goodBtn.style.color = '#a8c7fa'; badBtn.style.color = ''; };
+            badBtn.onclick = () => { badBtn.style.color = '#ffb4b4'; goodBtn.style.color = ''; };
+            
+            actions.appendChild(goodBtn);
+            actions.appendChild(badBtn);
+
+            wrapper.appendChild(actions);
         }
         chatBox.appendChild(wrapper);
     });
@@ -467,9 +530,15 @@ function appendLoader() {
     div.className = 'message bot-message';
     // UI CHANGE: Spinning icon instead of text
     div.innerHTML = `
-  <span class="material-symbols-outlined" style="animation:spin 1s linear infinite; font-size:24px; vertical-align: middle;">sync</span>
-  <span style="margin-left: 8px; vertical-align: middle; font-family: sans-serif;">Thinking...</span>
-`;
+        <div class="message-row">
+            <div class="ai-avatar">
+                <span class="material-symbols-outlined">smart_toy</span>
+            </div>
+            <div class="message-text">
+                <span class="material-symbols-outlined" style="animation:spin 1s linear infinite; font-size:20px; vertical-align: middle;">sync</span>
+                <span style="margin-left: 8px; vertical-align: middle;">Thinking...</span>
+            </div>
+        </div>`;
     
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -487,6 +556,14 @@ function appendTempError(msg) {
     div.style.color = '#ffb4b4'; // Lighter red for dark mode
     div.innerText = msg;
     chatBox.appendChild(div);
+}
+
+function createActionBtn(icon, title) {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.title = title;
+    btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+    return btn;
 }
 
 // --- STORAGE & UTILS ---

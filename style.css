@@ -249,8 +249,66 @@ body {
     max-width: 80%;
 }
 .bot-message {
-    padding-left: 20px; /* Align with input */
+    padding-left: 0;
     color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.message-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.ai-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #282a2c;
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--accent-blue);
+}
+
+.message-text {
+    flex: 1;
+    min-width: 0;
+    padding-top: 4px;
+}
+
+.message-actions {
+    display: flex;
+    gap: 5px;
+    margin-left: 47px; /* 32px avatar + 15px gap */
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.bot-message:hover .message-actions { opacity: 1; }
+@media (max-width: 768px) { .message-actions { opacity: 1; } }
+
+.action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.action-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+}
+.action-btn .material-symbols-outlined { font-size: 18px; }
+
+/* --- THINKING PROCESS STYLES --- */
 }
 
 /* --- THINKING PROCESS STYLES --- */
