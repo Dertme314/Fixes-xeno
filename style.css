@@ -1,7 +1,7 @@
 :root {
-    --bg-body: #131314;       /* Deepest black/grey */
-    --bg-sidebar: #1e1f20;    /* Slightly lighter for sidebar */
-    --bg-surface: #1e1f20;    /* Input bar background */
+    --bg-body: #131314;
+    --bg-sidebar: #1e1f20;
+    --bg-surface: #1e1f20;
     --bg-surface-hover: #333537;
     --text-primary: #e3e3e3;
     --text-secondary: #c4c7c5;
@@ -35,7 +35,9 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px 15px;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, width 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+    white-space: nowrap;
     z-index: 100;
 }
 
@@ -51,7 +53,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    width: 140px; /* Small pill width */
+    width: 140px;
     color: var(--text-secondary);
     background: #282a2c;
     transition: 0.2s;
@@ -171,7 +173,7 @@ body {
 .chat-box {
     flex: 1;
     overflow-y: auto;
-    padding: 0 0 100px 0; /* Space for input */
+    padding: 0 0 100px 0;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -205,7 +207,7 @@ body {
     font-size: 3.5rem;
     font-weight: 500;
     margin: 0;
-    color: #444746; /* Dimmed text for second line */
+    color: #444746;
 }
 
 /* Suggestions Grid */
@@ -293,7 +295,7 @@ body {
 .message-actions {
     display: flex;
     gap: 5px;
-    margin-left: 47px; /* 32px avatar + 15px gap */
+    margin-left: 47px;
     opacity: 0;
     transition: opacity 0.2s;
 }
@@ -340,7 +342,7 @@ body {
     transition: background-color 0.2s;
 }
 .thinking-summary:hover { background-color: rgba(255, 255, 255, 0.05); }
-.thinking-summary::marker, .thinking-summary::-webkit-details-marker { display: none; } /* Hide default triangle */
+.thinking-summary::marker, .thinking-summary::-webkit-details-marker { display: none; }
 
 .thinking-content {
     padding: 0 15px 15px 15px;
@@ -374,15 +376,14 @@ body {
     bottom: 0;
     left: 0; 
     right: 0;
-    background: var(--bg-body); /* Covers content behind it */
+    background: var(--bg-body);
     padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
     z-index: 50;
 }
-/* Adjust left position if desktop sidebar is visible */
-@media(min-width: 769px) { .input-container { left: 280px; } }
+@media(min-width: 769px) { .input-container { left: 280px; transition: left 0.3s ease; } }
 
 .stop-btn {
     background: #282a2c;
@@ -467,6 +468,20 @@ textarea {
     .main-content { margin-left: 0; }
     .input-container { left: 0; }
     .gradient-text, .sub-greeting { font-size: 2.5rem; }
+}
+
+@media (min-width: 769px) {
+    .sidebar.collapsed {
+        width: 0;
+        padding: 0;
+        opacity: 0;
+    }
+    
+    #mobile-menu-open { display: none; }
+
+    .sidebar.collapsed + .main-content #mobile-menu-open { display: inline-flex; }
+
+    .sidebar.collapsed + .main-content .input-container { left: 0; }
 }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
