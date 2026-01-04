@@ -1,7 +1,3 @@
-import { inject } from '@vercel/analytics';
-
-inject();
-
 // DOM Elements
 const chatBox = document.getElementById('chat-box');
 const chatForm = document.getElementById('chat-form');

@@ -1,7 +1,4 @@
 {
-  "dependencies": {
-    "@vercel/analytics": "^1.4.1"
-  },
   "devDependencies": {
     "playwright": "^1.57.0"
   }
