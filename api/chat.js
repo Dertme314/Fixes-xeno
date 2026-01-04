@@ -8,6 +8,7 @@ export default async function handler(req, res) {
   }
 
   const fullConversation = req.body.messages;
+  const mode = req.body.mode;
 
   if (!Array.isArray(fullConversation)) {
     return res.status(400).json({ error: "Invalid message format." });
@@ -82,7 +83,7 @@ export default async function handler(req, res) {
           "X-Title": "Xeno Help RAG"
         },
         body: JSON.stringify({
-          model: "tngtech/deepseek-r1t2-chimera:free",
+          model: mode === 'thinking' ? "tngtech/deepseek-r1t2-chimera:free" : "xiaomi/mimo-v2-flash:free",
           messages: finalMessages, // <--- We send the updated list here
           temperature: 0.7,
           max_tokens: 3000,
