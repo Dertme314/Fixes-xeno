@@ -309,9 +309,6 @@ body {
 .action-btn .material-symbols-outlined { font-size: 18px; }
 
 /* --- THINKING PROCESS STYLES --- */
-}
-
-/* --- THINKING PROCESS STYLES --- */
 .thinking-details {
     background: rgba(255, 255, 255, 0.05);
     border-left: 3px solid var(--accent-blue);
