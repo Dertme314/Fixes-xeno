@@ -104,22 +104,26 @@
 10. Issue: No Client Found / Cannot Select Client
 Cause: UI rendering issue or process detection failure. Solution: 1.  Possible Fix (Not Universal): Redownload Xeno and specifically select the "Legacy" UI option during download. 2.  
 ---
-## 📂 Folder Architecture
+## 📂 Folder Architecture & Paths
 
-**How to Access Files:**
-To access the internal Xeno files (scripts, configs, workspace), press `Win + R`, type `%localappdata%/xeno`, and hit Enter.
+**Important:** Xeno uses two different folders for its data.
+* **Workspace & Scripts:** `%localappdata%/xeno`
+* **UI Settings (New UI):** `%appdata%/xeno`
 
-**Directory Layouts:**
+**1. Internal Files (Workspace/Autoexec)**
+To access your scripts and workspace, press `Win + R`, type `%localappdata%/xeno`, and hit Enter.
 
-* **New UI Structure:**
-    * `\autoexec`: Scripts placed here run automatically when Xeno attaches.
-    * `\workspace`: The default folder where scripts save and read files.
-    * *(Note: The New UI does not use a visible `tabs` folder and does not have tabs are null issue.)*
+* **New UI Layout:**
+    * `\autoexec`: Scripts placed here run automatically on attach.
+    * `\workspace`: Where scripts save/read files.
+    * *(Note: The New UI has no `tabs` folder here).*
+* **Legacy UI Layout:**
+    * `\autoexec`: Scripts placed here run automatically on attach.
+    * `\workspace`: Where scripts save/read files.
+    * `\tabs`: Stores open tab cache.
 
-* **Legacy UI Structure:**
-    * `\autoexec`: Scripts placed here run automatically when Xeno attaches.
-    * `\workspace`: The default folder where scripts save and read files.
-    * `\tabs`: Stores the cache of open tabs and scripts in the editor.
+**2. UI Configuration (New UI Only)**
+To reset UI settings or cache, press `Win + R`, type `%appdata%/xeno`, and hit Enter.
 
 ## 🔗 Useful Links
 

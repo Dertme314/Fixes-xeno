@@ -485,3 +485,6 @@ textarea {
 }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+.ai-avatar.blinking { animation: blink 1.5s infinite ease-in-out; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(168, 199, 250, 0.2); }

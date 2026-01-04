@@ -184,6 +184,8 @@ async function generateResponse(chat) {
         if (currentController) currentController.abort();
     }, 120000);
 
+    let currentAvatar = null;
+
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
@@ -209,6 +211,13 @@ async function generateResponse(chat) {
         chat.messages.push(aiMsgObj);
         saveToStorage();
         renderChatUI();
+
+        const bubbles = chatBox.querySelectorAll('.bot-message');
+        if (bubbles.length > 0) {
+            const lastBubble = bubbles[bubbles.length - 1];
+            currentAvatar = lastBubble.querySelector('.ai-avatar');
+            if (currentAvatar) currentAvatar.classList.add('blinking');
+        }
 
         const updateLastBubble = (text) => {
             const bubbles = chatBox.querySelectorAll('.bot-message');
@@ -292,6 +301,7 @@ async function generateResponse(chat) {
             console.error(err);
         }
     } finally {
+        if (currentAvatar) currentAvatar.classList.remove('blinking');
         setInputState(true);
         userInput.focus();
         if (stopBtn) stopBtn.classList.add('hidden');
