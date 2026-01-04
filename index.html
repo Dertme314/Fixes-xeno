@@ -44,9 +44,19 @@
             <button id="mobile-menu-open" class="icon-btn mobile-only">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="model-selector">
-                <span>Xeno Helper 1.0</span>
+            <div class="model-selector" id="model-selector">
+                <span id="current-model">Fast</span>
                 <span class="material-symbols-outlined small-icon">expand_more</span>
+                <div class="model-dropdown hidden" id="model-dropdown">
+                    <div class="model-option" data-mode="fast">
+                        <div class="option-title">Fast</div>
+                        <div class="option-desc">Answers quickly</div>
+                    </div>
+                    <div class="model-option" data-mode="thinking">
+                        <div class="option-title">Thinking</div>
+                        <div class="option-desc">Think long and hard to solve complex problems</div>
+                    </div>
+                </div>
             </div>
         </header>
 

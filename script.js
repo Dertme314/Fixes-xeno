@@ -19,6 +19,12 @@ const mobileMenuBtn = document.getElementById('mobile-menu-open');
 const mobileMenuCloseBtn = document.getElementById('mobile-menu-close'); // Added close btn
 const sidebar = document.getElementById('sidebar'); // Changed to ID to match new HTML
 
+// Model Selector Elements
+const modelSelector = document.getElementById('model-selector');
+const modelDropdown = document.getElementById('model-dropdown');
+const currentModelSpan = document.getElementById('current-model');
+const modelOptions = document.querySelectorAll('.model-option');
+
 // --- CONSTANTS & PROMPTS ---
 const STORAGE_KEY = 'xeno_chats_v1';
 
@@ -26,7 +32,7 @@ const STORAGE_KEY = 'xeno_chats_v1';
 const systemContext = `You are Xeno Helper. You help users with the Xeno executor. Do not mention you are an AI. Be concise. formatting: Use Markdown.`;
 
 // 2. Master Prompt (The actual instruction sent to the AI)
-const masterPrompt = `
+const basePrompt = `
 ${systemContext}
 
 IMPORTANT INSTRUCTION:
@@ -34,6 +40,17 @@ You are a support assistant strictly for Xeno Helpers (the support team).
 Your goal is to train them on how to fix issues. 
 Use the context above to answer their technical questions.
 `;
+
+const PROMPTS = {
+    fast: "Answer quickly and concisely.",
+    thinking: "Think long and hard to solve complex problems. Break down the problem step by step and provide detailed reasoning."
+};
+
+let currentMode = 'fast';
+
+function getMasterPrompt() {
+    return `${basePrompt}\n\nMODE INSTRUCTION:\n${PROMPTS[currentMode]}`;
+}
 
 // State
 let allChats = [];
@@ -47,6 +64,42 @@ window.addEventListener('DOMContentLoaded', () => {
         loadChat(allChats[0].id);
     } else {
         startNewChat();
+    }
+
+    // Model Selector Logic
+    if (modelSelector) {
+        modelSelector.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modelDropdown.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', () => {
+            if (!modelDropdown.classList.contains('hidden')) {
+                modelDropdown.classList.add('hidden');
+            }
+        });
+
+        modelOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const mode = option.dataset.mode;
+                const title = option.querySelector('.option-title').textContent;
+                
+                currentModelSpan.textContent = title;
+                currentMode = mode;
+                
+                // Update current chat system prompt if it exists
+                if (currentChatId) {
+                    const chat = allChats.find(c => c.id === currentChatId);
+                    if (chat && chat.messages.length > 0 && chat.messages[0].role === 'system') {
+                        chat.messages[0].content = getMasterPrompt();
+                        saveToStorage();
+                    }
+                }
+                
+                modelDropdown.classList.add('hidden');
+            });
+        });
     }
 });
 
@@ -64,7 +117,7 @@ function startNewChat() {
     const newChat = {
         id: currentChatId,
         title: "New Chat",
-        messages: [{ role: "system", content: masterPrompt }],
+        messages: [{ role: "system", content: getMasterPrompt() }],
         timestamp: Date.now()
     };
     allChats.unshift(newChat); // Add to top
