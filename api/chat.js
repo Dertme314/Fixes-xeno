@@ -14,10 +14,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid message format." });
   }
 
-  // --- PROMPT DEFINITIONS ---
-  const PROMPTS = {
-    fast: "Answer very quickly and concisely.",
-    thinking: "Think step-by-step. Enclose your thought process in <think> tags, then provide the final answer."
+  // --- MODE DEFINITIONS ---
+  const MODES = {
+    fast: {
+      model: "xiaomi/mimo-v2-flash:free",
+      prompt: "Answer very quickly and concisely."
+    },
+    pro: {
+      model: "tngtech/deepseek-r1t2-chimera:free",
+      prompt: "Think step-by-step. Enclose your thought process in <think> tags, then provide the final answer."
+    },
+    thinking: {
+      model: "xiaomi/mimo-v2-flash:free",
+      prompt: "You are a sophisticated problem solver. Solve complex problems by thinking deeply.",
+      enableReasoning: true
+    }
   };
 
   // --- NEW: LOAD CONTEXT FROM FILE ---
@@ -47,8 +58,8 @@ export default async function handler(req, res) {
   const cleanMessages = fullConversation.filter(msg => msg.role !== 'system');
   
   // Construct Final System Content: Context + Role + Mode Instruction
-  const modeInstruction = PROMPTS[mode] || PROMPTS['fast'];
-  const finalSystemContent = `${masterPrompt}\n\nMODE INSTRUCTION:\n${modeInstruction}`;
+  const selectedMode = MODES[mode] || MODES['fast'];
+  const finalSystemContent = `${masterPrompt}\n\nMODE INSTRUCTION:\n${selectedMode.prompt}`;
 
   const finalMessages = [
     { role: "system", content: finalSystemContent },
@@ -76,6 +87,17 @@ export default async function handler(req, res) {
   // 2. Loop through the keys
   for (const currentKey of apiKeys) {
     try {
+      const requestBody = {
+        model: selectedMode.model,
+        messages: finalMessages, // <--- We send the updated list here
+        temperature: 0.7,
+        max_tokens: 3000,
+        stream: true // <--- ENABLE STREAMING
+      };
+      if (selectedMode.enableReasoning) {
+        requestBody.reasoning = { enabled: true };
+      }
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -84,13 +106,7 @@ export default async function handler(req, res) {
           "Referer": "https://xeno.onl",
           "X-Title": "Xeno Help RAG"
         },
-        body: JSON.stringify({
-          model: mode === 'thinking' ? "tngtech/deepseek-r1t2-chimera:free" : "xiaomi/mimo-v2-flash:free",
-          messages: finalMessages, // <--- We send the updated list here
-          temperature: 0.7,
-          max_tokens: 3000,
-          stream: true // <--- ENABLE STREAMING
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (response.ok) {

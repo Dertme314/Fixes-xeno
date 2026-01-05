@@ -45,7 +45,8 @@ Use the context above to answer their technical questions.
 
 const PROMPTS = {
     fast: "Answer very quickly and concisely.",
-    thinking: "Think step-by-step. Enclose your thought process in <think> tags, then provide the final answer."
+    pro: "Think step-by-step think really hard. Enclose your thought process in <tool_call> tags, double check answers then provide the final answer.",
+    thinking: "You are a sophisticated problem solver. Solve complex problems by thinking deeply."
 };
 
 let currentMode = 'fast';
@@ -63,6 +64,7 @@ let isUserStop = false;
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
     loadChatsFromStorage();
+    injectCustomStyles(); // <--- Add styles for reasoning box
     if (allChats.length > 0) {
         loadChat(allChats[0].id);
     } else {
@@ -208,9 +210,10 @@ async function generateResponse(chat) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = "";
+        let fullReasoning = "";
         let buffer = "";
 
-        const aiMsgObj = { role: "assistant", content: "" };
+        const aiMsgObj = { role: "assistant", content: "", reasoning: "" };
         chat.messages.push(aiMsgObj);
         saveToStorage();
         renderChatUI();
@@ -222,7 +225,7 @@ async function generateResponse(chat) {
             if (currentAvatar) currentAvatar.classList.add('blinking');
         }
 
-        const updateLastBubble = (text) => {
+        const updateLastBubble = (text, reasoning) => {
             const bubbles = chatBox.querySelectorAll('.bot-message');
             const lastBubble = bubbles[bubbles.length - 1];
             if (!lastBubble) return;
@@ -233,7 +236,7 @@ async function generateResponse(chat) {
             const existingDetails = contentDiv.querySelector('.thinking-details');
             const wasOpen = existingDetails ? existingDetails.hasAttribute('open') : true;
 
-            contentDiv.innerHTML = formatMessage(text, wasOpen);
+            contentDiv.innerHTML = formatMessage(text, reasoning, wasOpen);
 
             contentDiv.querySelectorAll('pre').forEach(pre => {
                 if (pre.querySelector('.copy-code-btn')) return;
@@ -267,6 +270,7 @@ async function generateResponse(chat) {
             buffer = lines.pop();
 
             let chunkContent = "";
+            let hasUpdate = false;
 
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
@@ -274,16 +278,26 @@ async function generateResponse(chat) {
                     if (dataStr === '[DONE]') continue;
                     try {
                         const data = JSON.parse(dataStr);
-                        const content = data.choices[0]?.delta?.content || "";
-                        chunkContent += content;
+                        const delta = data.choices[0]?.delta;
+                        if (delta) {
+                            if (delta.reasoning) {
+                                fullReasoning += delta.reasoning;
+                                hasUpdate = true;
+                            }
+                            if (delta.content) {
+                                chunkContent += delta.content;
+                                hasUpdate = true;
+                            }
+                        }
                     } catch (e) { console.error("Stream parse error", e); }
                 }
             }
             
-            if (chunkContent) {
+            if (hasUpdate) {
                 fullText += chunkContent;
                 aiMsgObj.content = fullText;
-                updateLastBubble(fullText);
+                aiMsgObj.reasoning = fullReasoning;
+                updateLastBubble(fullText, fullReasoning);
             }
         }
         
@@ -335,13 +349,20 @@ userInput.addEventListener('keydown', (e) => {
 
 // --- RENDER FUNCTIONS ---
 
-function formatMessage(text, isOpen = false) {
-    const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
-    const thinkContent = thinkMatch ? thinkMatch[1] : null;
-    let mainContent = text.replace(/<think>[\s\S]*?<\/think>/, '').replace(/<think>[\s\S]*/, '');
+function formatMessage(text, reasoning = null, isOpen = false) {
+    let thinkContent = reasoning;
+    let mainContent = text;
+
+    if (!thinkContent) {
+        const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/);
+        if (thinkMatch) {
+            thinkContent = thinkMatch[1];
+            mainContent = text.replace(/<think>[\s\S]*?<\/think>/, '').replace(/<think>[\s\S]*/, '');
+        }
+    }
 
     let html = '';
-    if (thinkMatch) {
+    if (thinkContent) {
         const openAttr = isOpen ? 'open' : '';
         html += `<details class="thinking-details" ${openAttr}>
             <summary class="thinking-summary">
@@ -391,7 +412,7 @@ function renderChatUI() {
             
             const textDiv = document.createElement('div');
             textDiv.className = 'message-text';
-            textDiv.innerHTML = formatMessage(msg.content, false);
+            textDiv.innerHTML = formatMessage(msg.content, msg.reasoning, false);
 
             textDiv.querySelectorAll('pre').forEach(pre => {
                 const copyBtn = document.createElement('button');
@@ -582,6 +603,41 @@ function setInputState(enabled) {
     userInput.disabled = !enabled;
     sendBtn.disabled = !enabled;
     chatForm.style.opacity = enabled ? "1" : "0.5";
+}
+
+function injectCustomStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .thinking-details {
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .thinking-summary {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.02);
+            transition: background 0.2s;
+        }
+        .thinking-summary:hover { background: rgba(0, 0, 0, 0.05); }
+        .thinking-content {
+            padding: 12px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            font-size: 0.9em;
+            color: #555;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 // --- BUTTON EVENTS ---
