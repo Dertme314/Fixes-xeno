@@ -125,11 +125,13 @@ To access your scripts and workspace, press `Win + R`, type `%localappdata%/xeno
 **2. UI Configuration (New UI Only)**
 To reset UI settings or cache, press `Win + R`, type `%appdata%/xeno`, and hit Enter.
 
-## 🔗 Useful Links
+## 🔗 Useful Links/info
 
 * **Official Website:** https://xeno.onl
 * **Mirror Sites:** https://xeno.now or https://x3no.pages.dev
 * **Discord Support:** https://discord.gg/xe-no
 * **Script Repository:** https://scriptblox.com
+* **Xeno free?** xeno is 100% free anyone claiming to sell keys or premiuim is a scammer
+* **Does xeno work on ___** Xeno only supports x64 windows 
 
 *Note: Xeno is undetected from client modification bans, but there is a potential risk of being banned during Roblox ban waves.*
