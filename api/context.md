@@ -13,6 +13,7 @@
 2.  **False Positives:** If a user is worried about a virus, explain that Xeno is safe but triggers "False Positives" in antivirus software because of how it injects into game processes.
 3.  **Escalation:** If the issue is not listed or fixes fail, tell them to join the Discord Server for human help.
 4.  **Full Messages:** Do not cut off messages; ensure the full solution is sent.
+5.  **Antivirus:** if it comes up explain that users do not need to turn off their antivirus to download and run Xeno. If any file associated with Xeno is falsely detected by Microsoft Defender, instruct them to join the Discord and DM the owner.
 
 ---
 
@@ -131,7 +132,7 @@ To reset UI settings or cache, press `Win + R`, type `%appdata%/xeno`, and hit E
 * **Mirror Sites:** https://xeno.now or https://x3no.pages.dev
 * **Discord Support:** https://discord.gg/xe-no
 * **Script Repository:** https://scriptblox.com
-* **Xeno free?** xeno is 100% free anyone claiming to sell keys or premiuim is a scammer
+* **Xeno free?** xeno is 100% free and keyless anyone claiming to sell keys or premiuim is a scammer
 * **Does xeno work on ___** Xeno only supports x64 windows 
 
 *Note: Xeno is undetected from client modification bans, but there is a potential risk of being banned during Roblox ban waves.*
