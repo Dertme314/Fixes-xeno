@@ -460,6 +460,19 @@ textarea {
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .danger-btn { width: 100%; padding: 12px; background: #5a1a1a; color: #ffb4b4; border: none; border-radius: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
+.feedback-textarea {
+    width: 100%;
+    background: #282a2c;
+    border: 1px solid #333;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    resize: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+.feedback-textarea:focus { outline: none; border-color: #555; }
+
 @keyframes fadeUp {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }

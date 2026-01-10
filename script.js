@@ -15,6 +15,12 @@ const closeSettings = document.getElementById('close-settings');
 const clearDataBtn = document.getElementById('clear-data-btn');
 const storageInfo = document.getElementById('storage-info');
 
+// Feedback Elements
+const feedbackModal = document.getElementById('feedback-modal');
+const closeFeedback = document.getElementById('close-feedback');
+const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+const feedbackInput = document.getElementById('feedback-text');
+
 // Mobile Menu
 const mobileMenuBtn = document.getElementById('mobile-menu-open'); 
 const mobileMenuCloseBtn = document.getElementById('mobile-menu-close');
@@ -60,6 +66,7 @@ function getMasterPrompt() {
 let allChats = [];
 let currentChatId = null;
 let currentController = null;
+let currentFeedbackMsg = null;
 let isUserStop = false;
 
 // --- INITIALIZATION ---
@@ -480,9 +487,10 @@ function renderChatUI() {
                     msg.feedback = null;
                     badBtn.style.color = '';
                 } else {
-                    msg.feedback = 'bad';
-                    badBtn.style.color = '#ffb4b4';
-                    goodBtn.style.color = '';
+                    currentFeedbackMsg = msg;
+                    feedbackInput.value = '';
+                    feedbackModal.classList.remove('hidden');
+                    feedbackInput.focus();
                 }
                 saveToStorage();
             };
@@ -690,3 +698,43 @@ clearDataBtn.addEventListener('click', () => {
 settingsModal.addEventListener('click', (e) => {
     if (e.target === settingsModal) settingsModal.classList.add('hidden');
 });
+
+// Feedback Modal Events
+if (submitFeedbackBtn) {
+    submitFeedbackBtn.addEventListener('click', () => {
+        if (currentFeedbackMsg) {
+            const text = feedbackInput.value;
+            currentFeedbackMsg.feedback = 'bad';
+            currentFeedbackMsg.feedbackText = text;
+            saveToStorage();
+            renderChatUI();
+            
+            // Send to API
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    feedback: text,
+                    messageContent: currentFeedbackMsg.content,
+                    timestamp: Date.now()
+                })
+            }).catch(console.error);
+        }
+        feedbackModal.classList.add('hidden');
+        currentFeedbackMsg = null;
+    });
+}
+if (closeFeedback) {
+    closeFeedback.addEventListener('click', () => {
+        feedbackModal.classList.add('hidden');
+        currentFeedbackMsg = null;
+    });
+}
+if (feedbackModal) {
+    feedbackModal.addEventListener('click', (e) => {
+        if (e.target === feedbackModal) {
+            feedbackModal.classList.add('hidden');
+            currentFeedbackMsg = null;
+        }
+    });
+}

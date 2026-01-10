@@ -141,6 +141,22 @@
         </div>
     </div>
 
+    <div id="feedback-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Provide Feedback</h3>
+                <button id="close-feedback" class="icon-btn"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 10px; font-size: 0.9rem;">Help us improve. What was the issue?</p>
+                <textarea id="feedback-text" class="feedback-textarea" placeholder="e.g., The code didn't work, inaccurate info..." rows="4"></textarea>
+                <button id="submit-feedback-btn" class="new-chat-btn" style="width: 100%; justify-content: center; margin-top: 15px;">
+                    Submit Feedback
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
