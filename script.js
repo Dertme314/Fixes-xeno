@@ -46,7 +46,8 @@ Use the context above to answer their technical questions.
 const PROMPTS = {
     fast: "Answer very quickly and concisely.",
     pro: "Think step-by-step think really hard. Enclose your thought process in <tool_call> tags, double check answers then provide the final answer.",
-    thinking: "You are a sophisticated problem solver. Solve complex problems by thinking deeply."
+    thinking: "You are a sophisticated problem solver. Solve complex problems by thinking deeply.",
+    simple: "Explain very simply and clearly for beginners. Avoid jargon."
 };
 
 let currentMode = 'fast';
@@ -103,6 +104,26 @@ window.addEventListener('DOMContentLoaded', () => {
                 modelDropdown.classList.add('hidden');
             });
         });
+
+        // Inject Simple Mode Option
+        const simpleOpt = document.createElement('div');
+        simpleOpt.className = 'model-option';
+        simpleOpt.dataset.mode = 'simple';
+        simpleOpt.innerHTML = '<span class="option-title">Simple Mode</span>';
+        simpleOpt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentModelSpan.textContent = "Simple Mode";
+            currentMode = 'simple';
+            if (currentChatId) {
+                const chat = allChats.find(c => c.id === currentChatId);
+                if (chat && chat.messages.length > 0 && chat.messages[0].role === 'system') {
+                    chat.messages[0].content = getMasterPrompt();
+                    saveToStorage();
+                }
+            }
+            modelDropdown.classList.add('hidden');
+        });
+        modelDropdown.appendChild(simpleOpt);
     }
 
     const savedSidebarState = localStorage.getItem(STORAGE_KEY_SIDEBAR);

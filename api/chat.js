@@ -28,6 +28,10 @@ export default async function handler(req, res) {
       model: "xiaomi/mimo-v2-flash:free",
       prompt: "You are a sophisticated problem solver. Solve complex problems by thinking deeply.",
       enableReasoning: true
+    },
+    simple: {
+      model: "xiaomi/mimo-v2-flash:free",
+      prompt: "Explain everything very simply, as if to a beginner. Avoid technical jargon. Keep explanations concise and easy to digest."
     }
   };
 
