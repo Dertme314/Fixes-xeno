@@ -104,26 +104,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 modelDropdown.classList.add('hidden');
             });
         });
-
-        // Inject Simple Mode Option
-        const simpleOpt = document.createElement('div');
-        simpleOpt.className = 'model-option';
-        simpleOpt.dataset.mode = 'simple';
-        simpleOpt.innerHTML = '<span class="option-title">Simple Mode</span>';
-        simpleOpt.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentModelSpan.textContent = "Simple Mode";
-            currentMode = 'simple';
-            if (currentChatId) {
-                const chat = allChats.find(c => c.id === currentChatId);
-                if (chat && chat.messages.length > 0 && chat.messages[0].role === 'system') {
-                    chat.messages[0].content = getMasterPrompt();
-                    saveToStorage();
-                }
-            }
-            modelDropdown.classList.add('hidden');
-        });
-        modelDropdown.appendChild(simpleOpt);
     }
 
     const savedSidebarState = localStorage.getItem(STORAGE_KEY_SIDEBAR);
