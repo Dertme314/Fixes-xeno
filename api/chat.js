@@ -118,8 +118,12 @@ export default async function handler(req, res) {
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
+          'Connection': 'keep-alive',
+          'Content-Encoding': 'none'
         });
+
+        // Send initial comment to force flush headers and prevent buffering
+        res.write(': stream-start\n\n');
 
         // Pipe the stream from OpenRouter directly to the client
         for await (const chunk of response.body) {
