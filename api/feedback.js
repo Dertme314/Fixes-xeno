@@ -16,7 +16,7 @@ export default async function handler(req, res) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        username: "Xeno Feedback Bot",
+                        username: "Derts Feedback Bot",
                         embeds: [{
                             title: "👎 New Negative Feedback",
                             color: 16734296, // Red
