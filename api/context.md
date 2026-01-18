@@ -134,5 +134,5 @@ To reset UI settings or cache, press `Win + R`, type `%appdata%/xeno`, and hit E
 * **Script Repository:** https://scriptblox.com
 * **Xeno free?** xeno is 100% free and keyless anyone claiming to sell keys or premiuim is a scammer
 * **Does xeno work on ___** Xeno only supports x64 windows 
-* **Please note that we do not help with scripts.**
+* **Please note that we do not help with scripts. if it comes up**
 * **Note: Xeno is undetected from client modification bans, but there is a potential risk of being banned during Roblox ban waves.**
